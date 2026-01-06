@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate AI Chat Agent</title>
+    <style>
+        :root {
+            --color-primary: #218 08D;
+            --color-primary-hover: #1d7474;
+            --color-primary-active: #1a6073;
+            --color-success: #32b8c6;
+            --color-warning: #e6814a;
+            --color-error: #c0152f;
+            --color-bg: #fcfcf9;
+            --color-surface: #ffffff;
+            --color-text: #134252;
+            --color-text-secondary: #627c81;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --space-16: 16px;
+            --space-8: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--color-bg);
+            color: var(--color-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            padding: var(--space-16);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        .container {
+            display: flex;
+            gap: var(--space-16);
+            flex: 1;
+            overflow: hidden;
+            padding: var(--space-16);
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-16);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+        }
+
+        .message {
+            display: flex;
+            gap: var(--space-8);
+            max-width: 85%;
+            animation: slideIn 250ms ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.agent {
+            align-self: flex-start;
+        }
+
+        .message-bubble {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .message.user .message-bubble {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .message.agent .message-bubble {
+            background: var(--color-bg);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .chat-input-area {
+            padding: var(--space-16);
+            border-top: 1px solid var(--color-border);
+            background: var(--color-surface);
+        }
+
+        .input-group {
+            display: flex;
+            gap: var(--space-8);
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--color-text);
+            background: var(--color-bg);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(33, 128, 141, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 250ms ease;
+        }
+
+        .btn:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-16);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: var(--space-16);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .card h2 {
+            margin: 0 0 var(--space-16) 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .card h3 {
+            margin: var(--space-16) 0 var(--space-8) 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 13px;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .lead-item {
+            background: var(--color-bg);
+            padding: var(--space-16);
+            border-radius: 6px;
+            margin-bottom: var(--space-8);
+            border-left: 3px solid var(--color-border);
+            cursor: pointer;
+            transition: background 150ms ease, border-color 150ms ease;
+        }
+
+        .lead-item:hover {
+            background: rgba(33, 128, 141, 0.08);
+        }
+
+        .lead-item.hot {
+            border-left-color: var(--color-success);
+        }
+
+        .lead-item.warm {
+            border-left-color: var(--color-warning);
+        }
+
+        .lead-item.cold {
+            border-left-color: #999;
+        }
+
+        .lead-name {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--color-text);
+        }
+
+        .lead-score {
+            font-size: 11px;
+            margin-top: 4px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            width: fit-content;
+        }
+
+        .lead-score.hot {
+            background: rgba(50, 184, 198, 0.15);
+            color: var(--color-success);
+        }
+
+        .lead-score.warm {
+            background: rgba(230, 129, 97, 0.15);
+            color: var(--color-warning);
+        }
+
+        .lead-score.cold {
+            background: rgba(0, 0, 0, 0.08);
+            color: #666;
+        }
+
+        .extracted-data {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 6px;
+            padding: 8px;
+            background: rgba(94, 82, 64, 0.06);
+            border-radius: 4px;
+            border-left: 2px solid var(--color-primary);
+        }
+
+        .extracted-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+
+        .extracted-label {
+            color: var(--color-text-secondary);
+        }
+
+        .extracted-value {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--space-16);
+            color: var(--color-text-secondary);
+            font-size: 12px;
+        }
+
+        .alert {
+            padding: var(--space-8) var(--space-16);
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: var(--space-8);
+        }
+
+        .alert-info {
+            background: rgba(33, 128, 141, 0.1);
+            color: var(--color-primary);
+            border: 1px solid rgba(33, 128, 141, 0.2);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+        }
+
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--color-text-secondary);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.5; }
+            30% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🤖 Real Estate AI Chat Agent</h1>
+        <p class="header-subtitle">Conversational buyer qualification across multiple channels</p>
+    </header>
+
+    <div class="container">
+        <!-- Main Chat Panel -->
+        <div class="chat-panel">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area">
+                <div class="input-group">
+                    <input type="text" id="userInput" placeholder="Type buyer message..." autocomplete="off">
+                    <button class="btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Active Conversations & Lead Queue -->
+        <div class="sidebar">
+            <!-- Stats -->
+            <div class="card">
+                <h2>📊 Stats</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Total Leads</span>
+                    <span class="stat-value" id="totalLeads">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Hot Leads</span>
+                    <span class="stat-value" id="hotCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Conversations</span>
+                    <span class="stat-value" id="activeCount">0</span>
+                </div>
+            </div>
+
+            <!-- Current Lead Profile -->
+            <div class="card">
+                <h2 id="currentLeadName">No Lead Selected</h2>
+                <div id="currentLeadProfile" class="empty-state">
+                    <p>Select a lead from the queue below to view extracted profile</p>
+                </div>
+            </div>
+
+            <!-- Lead Queue -->
+            <div class="card">
+                <h2>🔥 Hot Leads</h2>
+                <div id="hotLeadsList" class="empty-state">No hot leads yet</div>
+
+                <h3>⚡ Warm Leads</h3>
+                <div id="warmLeadsList" class="empty-state">No warm leads yet</div>
+
+                <h3>❄️ Cold Leads</h3>
+                <div id="coldLeadsList" class="empty-state">No cold leads yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLead = null;
+        let leadsDatabase = {};
+        let conversationHistory = [];
+
+        // Simulated AI responses and scoring logic
+        const aiResponses = [
+            { trigger: /hello|hi|hey/, response: "Hi! 👋 Welcome. I'm helping with real estate inquiries. Are you looking to buy a property?" },
+            { trigger: /looking to buy|interested in buying/, response: "Great! To help you find the right property, can you share a budget range you're comfortable with?" },
+            { trigger: /\d{5,}|\d{3}k|\d{2}m/, response: "Thanks for that! And what area or neighborhood are you interested in?" },
+            { trigger: /downtown|suburb|area|neighborhood|zip|district/, response: "Perfect. What type of property are you looking for - single family home, condo, or something else?" },
+            { trigger: /house|home|condo|apartment|apartment|investment/, response: "Got it. One more important question - do you have financing pre-approved, or are you still exploring options?" },
+            { trigger: /pre-approved|approved|cash buyer|cash/, response: "Excellent! When are you looking to make a purchase? Is this urgent, or are you flexible with timing?" },
+            { trigger: /soon|urgent|month|asap|quick/, response: "Perfect. I've got all the key info I need. Let me match you with some properties. Connecting with an agent now..." },
+            { trigger: /./, response: "Thanks for that info! Let me ask one more clarifying question..." }
+        ];
+
+        // Extract data from message
+        function extractData(message) {
+            const data = {};
+            
+            // Budget detection
+            const budgetMatch = message.match(/\$?([\d,]+)(k|m|000)?/i);
+            if (budgetMatch) {
+                let amount = parseInt(budgetMatch[1].replace(',', ''));
+                if (budgetMatch[2] === 'k') amount *= 1000;
+                if (budgetMatch[2] === 'm') amount *= 1000000;
+                data.budget = amount;
+            }
+
+            // Location detection
+            const locationKeywords = ['downtown', 'suburb', 'area', 'district', 'neighborhood', 'zip', 'street', 'east', 'west', 'north', 'south'];
+            if (locationKeywords.some(kw => message.toLowerCase().includes(kw))) {
+                data.location = message.match(/(?:in|at)\s+(\w+(?:\s+\w+)?)/i)?.[1] || 'Specified';
+            }
+
+            // Property type detection
+            const propertyKeywords = {
+                residential: ['house', 'home', 'single family'],
+                condo: ['condo', 'condo', 'apartment', 'apt'],
+                investment: ['investment', 'rental', 'multi-family'],
+                multifamily: ['multi', 'multiplex', 'building']
+            };
+            for (const [type, keywords] of Object.entries(propertyKeywords)) {
+                if (keywords.some(kw => message.toLowerCase().includes(kw))) {
+                    data.propertyType = type;
+                }
+            }
+
+            // Financing detection
+            if (message.toLowerCase().includes('pre-approved') || message.toLowerCase().includes('approved')) {
+                data.financing = 'preapproved';
+            } else if (message.toLowerCase().includes('cash')) {
+                data.financing = 'cash';
+            } else if (message.toLowerCase().includes('exploring') || message.toLowerCase().includes('options')) {
+                data.financing = 'exploring';
+            }
+
+            // Timeline detection
+            if (message.toLowerCase().includes('urgent') || message.toLowerCase().includes('asap') || message.toLowerCase().includes('week')) {
+                data.timeline = 'urgent';
+            } else if (message.toLowerCase().includes('soon') || message.toLowerCase().includes('month')) {
+                data.timeline = 'soon';
+            } else if (message.toLowerCase().includes('flexible') || message.toLowerCase().includes('exploring')) {
+                data.timeline = 'flexible';
+            }
+
+            return data;
+        }
+
+        // Calculate lead score based on extracted data
+        function calculateScore(leadData) {
+            let score = 0;
+            
+            if (leadData.financing === 'preapproved' || leadData.financing === 'cash') score += 30;
+            else if (leadData.financing === 'exploring') score += 10;
+            else score += 5;
+
+            if (leadData.timeline === 'urgent') score += 25;
+            else if (leadData.timeline === 'soon') score += 15;
+            else if (leadData.timeline === 'flexible') score += 5;
+
+            if (leadData.budget) score += 15;
+            if (leadData.location) score += 10;
+            if (leadData.propertyType) score += 5;
+
+            // Conversation depth bonus
+            if (Object.keys(leadData).length >= 3) score += 10;
+
+            return Math.min(score, 100);
+        }
+
+        // Get lead tier based on score
+        function getTier(score) {
+            if (score >= 80) return 'hot';
+            if (score >= 60) return 'warm';
+            return 'cold';
+        }
+
+        // Send message from user
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            input.value = '';
+
+            // Create or update lead
+            if (!currentLead) {
+                currentLead = {
+                    id: 'LEAD-' + Date.now(),
+                    channel: 'chat',
+                    messages: [],
+                    extractedData: {},
+                    score: 0,
+                    tier: 'cold',
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                leadsDatabase[currentLead.id] = currentLead;
+            }
+
+            // Extract data from message
+            const newData = extractData(message);
+            currentLead.extractedData = { ...currentLead.extractedData, ...newData };
+            currentLead.messages.push({ role: 'user', content: message });
+
+            // Recalculate score
+            currentLead.score = calculateScore(currentLead.extractedData);
+            currentLead.tier = getTier(currentLead.score);
+
+            // Add AI response
+            setTimeout(() => {
+                const aiResponse = generateAIResponse(message, currentLead.extractedData);
+                addMessage(aiResponse, 'agent');
+                currentLead.messages.push({ role: 'agent', content: aiResponse });
+
+                // Simulate typing indicator
+                showTypingIndicator(false);
+            }, 800);
+
+            showTypingIndicator(true);
+            updateSidebar();
+        }
+
+        // Generate AI response
+        function generateAIResponse(message, extractedData) {
+            for (const rule of aiResponses) {
+                if (rule.trigger.test(message)) {
+                    return rule.response;
+                }
+            }
+            return "I understand. Can you tell me more about what you're looking for?";
+        }
+
+        // Add message to chat
+        function addMessage(text, role) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${role}`;
+            messageEl.innerHTML = `<div class="message-bubble">${escapeHtml(text)}</div>`;
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator(show) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const existingIndicator = messagesDiv.querySelector('.message.agent .typing-indicator');
+            
+            if (show && !existingIndicator) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message agent';
+                messageEl.innerHTML = `<div class="message-bubble typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+                messagesDiv.appendChild(messageEl);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } else if (!show && existingIndicator) {
+                existingIndicator.parentElement.parentElement.remove();
+            }
+        }
+
+        // Update sidebar with lead queue and profile
+        function updateSidebar() {
+            // Update current lead profile
+            if (currentLead) {
+                document.getElementById('currentLeadName').textContent = `Lead #${currentLead.id.split('-')[1].slice(0, 4)}`;
+                const tierEmoji = currentLead.tier === 'hot' ? '🔥' : currentLead.tier === 'warm' ? '⚡' : '❄️';
+                
+                let profileHTML = `
+                    <div class="alert alert-info">${tierEmoji} ${currentLead.tier.toUpperCase()} - Score: ${currentLead.score}/100</div>
+                    <div class="extracted-data">
+                `;
+
+                if (currentLead.extractedData.budget) {
+                    profileHTML += `<div class="extracted-item"><span class="extracted-label">Budget:</span><span class="extracted-value">$${(currentLead.extractedData.budget).toLocaleString()}</span></div>`;
+                }
+                if (currentLead.extractedData.location) {
+                    profileHTML += `<div class="extracted-item"><span class="extracted-label">Location:</span><span class="extracted-value">${currentLead.extractedData.location}</span></div>`;
+                }
+                if (currentLead.extractedData.propertyType) {
+                    profileHTML += `<div class="extracted-item"><span class="extracted-label">Type:</span><span class="extracted-value">${currentLead.extractedData.propertyType}</span></div>`;
+                }
+                if (currentLead.extractedData.financing) {
+                    profileHTML += `<div class="extracted-item"><span class="extracted-label">Financing:</span><span class="extracted-value">${currentLead.extractedData.financing}</span></div>`;
+                }
+                if (currentLead.extractedData.timeline) {
+                    profileHTML += `<div class="extracted-item"><span class="extracted-label">Timeline:</span><span class="extracted-value">${currentLead.extractedData.timeline}</span></div>`;
+                }
+
+                profileHTML += `<div class="extracted-item"><span class="extracted-label">Messages:</span><span class="extracted-value">${currentLead.messages.length}</span></div>`;
+                profileHTML += '</div>';
+
+                document.getElementById('currentLeadProfile').innerHTML = profileHTML;
+            }
+
+            // Update stats
+            const leads = Object.values(leadsDatabase);
+            const hotLeads = leads.filter(l => l.tier === 'hot');
+            const warmLeads = leads.filter(l => l.tier === 'warm');
+            const coldLeads = leads.filter(l => l.tier === 'cold');
+
+            document.getElementById('totalLeads').textContent = leads.length;
+            document.getElementById('hotCount').textContent = hotLeads.length;
+            document.getElementById('activeCount').textContent = leads.length;
+
+            // Update lead lists
+            document.getElementById('hotLeadsList').innerHTML = hotLeads.length === 0 ? 
+                '<div class="empty-state">No hot leads yet</div>' :
+                hotLeads.map(lead => `
+                    <div class="lead-item hot" onclick="selectLead('${lead.id}')">
+                        <div class="lead-name">Lead #${lead.id.split('-')[1].slice(0, 4)}</div>
+                        <div class="lead-score hot">${lead.score}/100</div>
+                    </div>
+                `).join('');
+
+            document.getElementById('warmLeadsList').innerHTML = warmLeads.length === 0 ? 
+                '<div class="empty-state">No warm leads yet</div>' :
+                warmLeads.map(lead => `
+                    <div class="lead-item warm" onclick="selectLead('${lead.id}')">
+                        <div class="lead-name">Lead #${lead.id.split('-')[1].slice(0, 4)}</div>
+                        <div class="lead-score warm">${lead.score}/100</div>
+                    </div>
+                `).join('');
+
+            document.getElementById('coldLeadsList').innerHTML = coldLeads.length === 0 ? 
+                '<div class="empty-state">No cold leads yet</div>' :
+                coldLeads.map(lead => `
+                    <div class="lead-item cold" onclick="selectLead('${lead.id}')">
+                        <div class="lead-name">Lead #${lead.id.split('-')[1].slice(0, 4)}</div>
+                        <div class="lead-score cold">${lead.score}/100</div>
+                    </div>
+                `).join('');
+        }
+
+        // Select a lead to view
+        function selectLead(leadId) {
+            currentLead = leadsDatabase[leadId];
+            document.getElementById('chatMessages').innerHTML = '';
+            
+            // Replay conversation
+            currentLead.messages.forEach(msg => {
+                addMessage(msg.content, msg.role);
+            });
+
+            updateSidebar();
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enter key to send
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Sample leads for demo
+        function addSampleLead() {
+            const sampleMessages = [
+                "Hi, I'm looking to buy a house",
+                "Around $300k in the downtown area",
+                "Single family home",
+                "I'm pre-approved for a mortgage",
+                "Looking to close within 60 days"
+            ];
+
+            let sampleLead = {
+                id: 'LEAD-' + Date.now(),
+                channel: 'chat',
+                messages: [],
+                extractedData: {},
+                score: 0,
+                tier: 'cold',
+                timestamp: new Date().toLocaleTimeString()
+            };
+
+            sampleMessages.forEach(msg => {
+                const data = extractData(msg);
+                sampleLead.extractedData = { ...sampleLead.extractedData, ...data };
+                sampleLead.messages.push({ role: 'user', content: msg });
+                sampleLead.messages.push({ role: 'agent', content: generateAIResponse(msg, sampleLead.extractedData) });
+            });
+
+            sampleLead.score = calculateScore(sampleLead.extractedData);
+            sampleLead.tier = getTier(sampleLead.score);
+            leadsDatabase[sampleLead.id] = sampleLead;
+
+            updateSidebar();
+        }
+
+        // Initialize
+        updateSidebar();
+    </script>
+</body>
+</html>
