@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Estate AI Chat Agent</title>
+    <title>Aigent - Real Estate AI Agent</title>
     <style>
         :root {
             --color-primary: #218 08D;
@@ -43,16 +43,56 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
 
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-16);
+        }
+
         h1 {
             margin: 0;
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .header-subtitle {
             font-size: 12px;
             color: var(--color-text-secondary);
             margin-top: 4px;
+        }
+
+        .channel-selector {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .channel-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--color-bg);
+            color: var(--color-text-secondary);
+            border: 1px solid var(--color-border);
+            transition: all 150ms ease;
+        }
+
+        .channel-badge:hover {
+            background: rgba(33, 128, 141, 0.1);
+            color: var(--color-primary);
+        }
+
+        .channel-badge.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
         }
 
         .container {
@@ -74,6 +114,21 @@
             border: 1px solid var(--color-border);
             border-radius: 8px;
             overflow: hidden;
+        }
+
+        .chat-header {
+            padding: var(--space-16);
+            border-bottom: 1px solid var(--color-border);
+            background: linear-gradient(135deg, rgba(33, 128, 141, 0.05), rgba(50, 184, 198, 0.05));
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .chat-messages {
@@ -270,6 +325,12 @@
             color: var(--color-text);
         }
 
+        .lead-channel {
+            font-size: 10px;
+            color: var(--color-text-secondary);
+            margin-top: 2px;
+        }
+
         .lead-score {
             font-size: 11px;
             margin-top: 4px;
@@ -369,13 +430,27 @@
 </head>
 <body>
     <header>
-        <h1>🤖 Real Estate AI Chat Agent</h1>
-        <p class="header-subtitle">Conversational buyer qualification across multiple channels</p>
+        <div class="header-content">
+            <div>
+                <h1>🤖 Aigent</h1>
+                <p class="header-subtitle">Real Estate AI Agent | Multi-Channel Buyer Qualification</p>
+            </div>
+            <div class="channel-selector">
+                <span style="font-size: 12px; color: var(--color-text-secondary); margin-right: 8px;">Demo Channels:</span>
+                <button class="channel-badge active" onclick="switchChannel('website')">🌐 Website</button>
+                <button class="channel-badge" onclick="switchChannel('whatsapp')">📱 WhatsApp</button>
+                <button class="channel-badge" onclick="switchChannel('messenger')">💬 Messenger</button>
+                <button class="channel-badge" onclick="switchChannel('sms')">💬 SMS</button>
+            </div>
+        </div>
     </header>
 
     <div class="container">
         <!-- Main Chat Panel -->
         <div class="chat-panel">
+            <div class="chat-header">
+                <h3 id="channelName">🌐 Website Chat</h3>
+            </div>
             <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input-area">
                 <div class="input-group">
@@ -395,12 +470,12 @@
                     <span class="stat-value" id="totalLeads">0</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Hot Leads</span>
+                    <span class="stat-label">Hot Leads 🔥</span>
                     <span class="stat-value" id="hotCount">0</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Conversations</span>
-                    <span class="stat-value" id="activeCount">0</span>
+                    <span class="stat-label">Channels Active</span>
+                    <span class="stat-value" id="activeCount">1</span>
                 </div>
             </div>
 
@@ -428,26 +503,31 @@
 
     <script>
         let currentLead = null;
+        let currentChannel = 'website';
         let leadsDatabase = {};
-        let conversationHistory = [];
 
-        // Simulated AI responses and scoring logic
+        const channelNames = {
+            website: '🌐 Website Chat',
+            whatsapp: '📱 WhatsApp',
+            messenger: '💬 Messenger',
+            sms: '💬 SMS'
+        };
+
+        // Simulated AI responses
         const aiResponses = [
-            { trigger: /hello|hi|hey/, response: "Hi! 👋 Welcome. I'm helping with real estate inquiries. Are you looking to buy a property?" },
+            { trigger: /hello|hi|hey/, response: "Hi! 👋 Welcome to Aigent. I'm here to help you find the perfect property. Are you looking to buy?" },
             { trigger: /looking to buy|interested in buying/, response: "Great! To help you find the right property, can you share a budget range you're comfortable with?" },
             { trigger: /\d{5,}|\d{3}k|\d{2}m/, response: "Thanks for that! And what area or neighborhood are you interested in?" },
             { trigger: /downtown|suburb|area|neighborhood|zip|district/, response: "Perfect. What type of property are you looking for - single family home, condo, or something else?" },
-            { trigger: /house|home|condo|apartment|apartment|investment/, response: "Got it. One more important question - do you have financing pre-approved, or are you still exploring options?" },
+            { trigger: /house|home|condo|apartment|investment/, response: "Got it. One more important question - do you have financing pre-approved, or are you still exploring options?" },
             { trigger: /pre-approved|approved|cash buyer|cash/, response: "Excellent! When are you looking to make a purchase? Is this urgent, or are you flexible with timing?" },
             { trigger: /soon|urgent|month|asap|quick/, response: "Perfect. I've got all the key info I need. Let me match you with some properties. Connecting with an agent now..." },
             { trigger: /./, response: "Thanks for that info! Let me ask one more clarifying question..." }
         ];
 
-        // Extract data from message
         function extractData(message) {
             const data = {};
             
-            // Budget detection
             const budgetMatch = message.match(/\$?([\d,]+)(k|m|000)?/i);
             if (budgetMatch) {
                 let amount = parseInt(budgetMatch[1].replace(',', ''));
@@ -456,16 +536,14 @@
                 data.budget = amount;
             }
 
-            // Location detection
             const locationKeywords = ['downtown', 'suburb', 'area', 'district', 'neighborhood', 'zip', 'street', 'east', 'west', 'north', 'south'];
             if (locationKeywords.some(kw => message.toLowerCase().includes(kw))) {
-                data.location = message.match(/(?:in|at)\s+(\w+(?:\s+\w+)?)/i)?.[1] || 'Specified';
+                data.location = message.match(/(?:in|at|around)\s+(\w+(?:\s+\w+)?)/i)?.[1] || 'Specified';
             }
 
-            // Property type detection
             const propertyKeywords = {
                 residential: ['house', 'home', 'single family'],
-                condo: ['condo', 'condo', 'apartment', 'apt'],
+                condo: ['condo', 'apartment', 'apt'],
                 investment: ['investment', 'rental', 'multi-family'],
                 multifamily: ['multi', 'multiplex', 'building']
             };
@@ -475,7 +553,6 @@
                 }
             }
 
-            // Financing detection
             if (message.toLowerCase().includes('pre-approved') || message.toLowerCase().includes('approved')) {
                 data.financing = 'preapproved';
             } else if (message.toLowerCase().includes('cash')) {
@@ -484,7 +561,6 @@
                 data.financing = 'exploring';
             }
 
-            // Timeline detection
             if (message.toLowerCase().includes('urgent') || message.toLowerCase().includes('asap') || message.toLowerCase().includes('week')) {
                 data.timeline = 'urgent';
             } else if (message.toLowerCase().includes('soon') || message.toLowerCase().includes('month')) {
@@ -496,7 +572,6 @@
             return data;
         }
 
-        // Calculate lead score based on extracted data
         function calculateScore(leadData) {
             let score = 0;
             
@@ -512,35 +587,30 @@
             if (leadData.location) score += 10;
             if (leadData.propertyType) score += 5;
 
-            // Conversation depth bonus
             if (Object.keys(leadData).length >= 3) score += 10;
 
             return Math.min(score, 100);
         }
 
-        // Get lead tier based on score
         function getTier(score) {
             if (score >= 80) return 'hot';
             if (score >= 60) return 'warm';
             return 'cold';
         }
 
-        // Send message from user
         function sendMessage() {
             const input = document.getElementById('userInput');
             const message = input.value.trim();
             
             if (!message) return;
 
-            // Add user message to chat
             addMessage(message, 'user');
             input.value = '';
 
-            // Create or update lead
             if (!currentLead) {
                 currentLead = {
                     id: 'LEAD-' + Date.now(),
-                    channel: 'chat',
+                    channel: currentChannel,
                     messages: [],
                     extractedData: {},
                     score: 0,
@@ -550,22 +620,18 @@
                 leadsDatabase[currentLead.id] = currentLead;
             }
 
-            // Extract data from message
             const newData = extractData(message);
             currentLead.extractedData = { ...currentLead.extractedData, ...newData };
             currentLead.messages.push({ role: 'user', content: message });
 
-            // Recalculate score
             currentLead.score = calculateScore(currentLead.extractedData);
             currentLead.tier = getTier(currentLead.score);
 
-            // Add AI response
             setTimeout(() => {
                 const aiResponse = generateAIResponse(message, currentLead.extractedData);
                 addMessage(aiResponse, 'agent');
                 currentLead.messages.push({ role: 'agent', content: aiResponse });
 
-                // Simulate typing indicator
                 showTypingIndicator(false);
             }, 800);
 
@@ -573,7 +639,6 @@
             updateSidebar();
         }
 
-        // Generate AI response
         function generateAIResponse(message, extractedData) {
             for (const rule of aiResponses) {
                 if (rule.trigger.test(message)) {
@@ -583,7 +648,6 @@
             return "I understand. Can you tell me more about what you're looking for?";
         }
 
-        // Add message to chat
         function addMessage(text, role) {
             const messagesDiv = document.getElementById('chatMessages');
             const messageEl = document.createElement('div');
@@ -593,7 +657,6 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Show typing indicator
         function showTypingIndicator(show) {
             const messagesDiv = document.getElementById('chatMessages');
             const existingIndicator = messagesDiv.querySelector('.message.agent .typing-indicator');
@@ -609,9 +672,7 @@
             }
         }
 
-        // Update sidebar with lead queue and profile
         function updateSidebar() {
-            // Update current lead profile
             if (currentLead) {
                 document.getElementById('currentLeadName').textContent = `Lead #${currentLead.id.split('-')[1].slice(0, 4)}`;
                 const tierEmoji = currentLead.tier === 'hot' ? '🔥' : currentLead.tier === 'warm' ? '⚡' : '❄️';
@@ -643,7 +704,6 @@
                 document.getElementById('currentLeadProfile').innerHTML = profileHTML;
             }
 
-            // Update stats
             const leads = Object.values(leadsDatabase);
             const hotLeads = leads.filter(l => l.tier === 'hot');
             const warmLeads = leads.filter(l => l.tier === 'warm');
@@ -651,14 +711,13 @@
 
             document.getElementById('totalLeads').textContent = leads.length;
             document.getElementById('hotCount').textContent = hotLeads.length;
-            document.getElementById('activeCount').textContent = leads.length;
 
-            // Update lead lists
             document.getElementById('hotLeadsList').innerHTML = hotLeads.length === 0 ? 
                 '<div class="empty-state">No hot leads yet</div>' :
                 hotLeads.map(lead => `
                     <div class="lead-item hot" onclick="selectLead('${lead.id}')">
                         <div class="lead-name">Lead #${lead.id.split('-')[1].slice(0, 4)}</div>
+                        <div class="lead-channel">${channelNames[lead.channel]}</div>
                         <div class="lead-score hot">${lead.score}/100</div>
                     </div>
                 `).join('');
@@ -668,6 +727,7 @@
                 warmLeads.map(lead => `
                     <div class="lead-item warm" onclick="selectLead('${lead.id}')">
                         <div class="lead-name">Lead #${lead.id.split('-')[1].slice(0, 4)}</div>
+                        <div class="lead-channel">${channelNames[lead.channel]}</div>
                         <div class="lead-score warm">${lead.score}/100</div>
                     </div>
                 `).join('');
@@ -677,17 +737,16 @@
                 coldLeads.map(lead => `
                     <div class="lead-item cold" onclick="selectLead('${lead.id}')">
                         <div class="lead-name">Lead #${lead.id.split('-')[1].slice(0, 4)}</div>
+                        <div class="lead-channel">${channelNames[lead.channel]}</div>
                         <div class="lead-score cold">${lead.score}/100</div>
                     </div>
                 `).join('');
         }
 
-        // Select a lead to view
         function selectLead(leadId) {
             currentLead = leadsDatabase[leadId];
             document.getElementById('chatMessages').innerHTML = '';
             
-            // Replay conversation
             currentLead.messages.forEach(msg => {
                 addMessage(msg.content, msg.role);
             });
@@ -695,53 +754,29 @@
             updateSidebar();
         }
 
-        // Escape HTML
+        function switchChannel(channel) {
+            currentChannel = channel;
+            currentLead = null;
+            document.getElementById('chatMessages').innerHTML = '';
+            document.getElementById('userInput').value = '';
+            document.getElementById('channelName').textContent = channelNames[channel];
+            
+            document.querySelectorAll('.channel-badge').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            updateSidebar();
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Enter key to send
         document.getElementById('userInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
 
-        // Sample leads for demo
-        function addSampleLead() {
-            const sampleMessages = [
-                "Hi, I'm looking to buy a house",
-                "Around $300k in the downtown area",
-                "Single family home",
-                "I'm pre-approved for a mortgage",
-                "Looking to close within 60 days"
-            ];
-
-            let sampleLead = {
-                id: 'LEAD-' + Date.now(),
-                channel: 'chat',
-                messages: [],
-                extractedData: {},
-                score: 0,
-                tier: 'cold',
-                timestamp: new Date().toLocaleTimeString()
-            };
-
-            sampleMessages.forEach(msg => {
-                const data = extractData(msg);
-                sampleLead.extractedData = { ...sampleLead.extractedData, ...data };
-                sampleLead.messages.push({ role: 'user', content: msg });
-                sampleLead.messages.push({ role: 'agent', content: generateAIResponse(msg, sampleLead.extractedData) });
-            });
-
-            sampleLead.score = calculateScore(sampleLead.extractedData);
-            sampleLead.tier = getTier(sampleLead.score);
-            leadsDatabase[sampleLead.id] = sampleLead;
-
-            updateSidebar();
-        }
-
-        // Initialize
         updateSidebar();
     </script>
 </body>
